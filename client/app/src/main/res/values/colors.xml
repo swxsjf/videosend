@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorRed">#e00000</color>
+    <color name="loadBackgroung">#E2F3FE</color>
+    <color name="LoginBackgroung">#5EC3FD</color>
+    <color name="GrayLine">#D9D9D9</color>
+    <color name="white">#ffffff</color>
+    <color name="touming">#00ffffff</color>
+    <color name="Bantouming">#7f000000</color>
+    <color name="yellow">#F4EA2A</color>
+    <color name="GrayWord">#797979</color>
+    <color name="main_fragment_title">#F8B84F</color>
+    <color name="chat_button_green">#73B811</color>
+    <color name="chat_title_black">#393A3F</color>
+    <color name="background_gray">#EDEDED</color>
+    <color name="Red">#e00000</color>
+    <color name="text_default">#797979</color>
+    <color name="home_green">#426f42</color>
+    <color name="home_ceng">#db7093</color>
+    <color name="home_red">#A68064</color>
+    <color name="home_zi">#871F78</color>
+    <color name="login_button">#336799</color>
+    <color name="choise_button">#069789</color>
+</resources>
