@@ -3,6 +3,7 @@ package com.example.shenweixing.myapplication;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +21,7 @@ import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
     private final List<Socket> socket3 = new ArrayList<>();
     private Button doorbell;
     private Button phone;
+    private InetAddress address;
 
 
     @Override
@@ -65,6 +68,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
             SendMessage();
             //GetMessage();
             // GetMessage1();
+//            method();
             GetMessageFromTcp();
         } else {
             T.showLong(this, "当前非WiFi环境");
@@ -153,6 +157,62 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
             }
         }).start();
     }
+    private void method(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Socket socket = new Socket("192.168.11.160", 23335);
+                    BufferedReader bf = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                    while (isFinish) {
+                        String data = bf.readLine();
+                        Gson gson = new Gson();
+                        final ChatRecord recode = gson.fromJson(data, ChatRecord.class);
+                        if (recode != null) {
+                            final Realm relm = Realm.getDefaultInstance();
+                            recode.setSendType(false);
+                            recode.setIP(socket.getInetAddress().getHostAddress());
+                            if (recode.getType().equals("2")) {//图片
+                                String picturePath = FileUtils.savePicture(recode.getContent());
+                                recode.setContent(picturePath);
+                            } else if (recode.getType().equals("3")) {
+                                if (MyApplication.list.size() == 0) {
+                                    bw.write("true");
+                                    bw.flush();
+                                    for (int i = 0; i < list.size(); i++) {
+                                        if (recode.getIP().equals(list.get(i).getIpAdress())) {
+                                            Intent intent1 = new Intent(MainActivity.this, VoideoChatActivity.class);
+                                            intent1.putExtra("data", list.get(i));
+                                            intent1.putExtra("type", "2");
+                                            startActivity(intent1);
+                                        }
+                                    }
+                                }
+                            } else if (recode.getType().equals("4")) {//语音
+                                String voicePath = FileUtils.saveVoice(recode.getContent());
+                                recode.setContent(voicePath);
+                            }
+                            relm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    realm.copyToRealm(recode);
+                                }
+                            });
+                            Intent intent = new Intent();
+                            intent.setAction("notify");//发送至聊天页面
+                            sendBroadcast(intent);
+                        }
+                        if (socket.isClosed()) {
+                            break;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
 
     /**
      * 获取在线人员信息
@@ -198,12 +258,14 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
             public void run() {
                 try {
                     String ip = NetworkUtils.getWifiIpAddress(MainActivity.this);
+                    Log.e("aaa","自动获取的本机地址："+ip);
                     DatagramSocket socket = new DatagramSocket();
                     String data = "aaa," + name;
                     while (isFinish) {
                         for (int i = 2; i < 255; i++) {
                             ip = ip.substring(0, ip.lastIndexOf(".")) + "." + i;
-                            InetAddress address = InetAddress.getByName(ip);//初始化地址
+                            //初始化地址
+                            address = InetAddress.getByName(ip);
                             DatagramPacket packet = new DatagramPacket(data.getBytes(), data.getBytes().length, address, 23333);
                             socket.send(packet);
                         }

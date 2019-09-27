@@ -3,6 +3,8 @@ package com.example.shenweixing.myapplication.utils;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.example.shenweixing.myapplication.MyApplication;
+
 /**
  * 诚志海图
  * Created by ShenWeiXing on 2019/9/10.9:41
@@ -16,12 +18,11 @@ public class T {
     /**
      * 短时间显示Toast
      *
-     * @param context
      * @param message
      */
-    public static void showShort(Context context, CharSequence message) {
+    public static void showShort( CharSequence message) {
         if (null == toast) {
-            toast = Toast.makeText(context, message, Toast.LENGTH_SHORT);
+            toast = Toast.makeText(MyApplication.getInstance(), message, Toast.LENGTH_SHORT);
         } else {
             toast.setText(message);
         }
@@ -31,12 +32,11 @@ public class T {
     /**
      * 短时间显示Toast
      *
-     * @param context
      * @param message
      */
-    public static void showShort(Context context, int message) {
+    public static void showShort( int message) {
         if (null == toast) {
-            toast = Toast.makeText(context, message, Toast.LENGTH_SHORT);
+            toast = Toast.makeText(MyApplication.getInstance(), message, Toast.LENGTH_SHORT);
         } else {
             toast.setText(message);
         }
@@ -46,7 +46,6 @@ public class T {
     /**
      * 长时间显示Toast
      *
-     * @param context
      * @param message
      */
     public static void showLong(Context context, CharSequence message) {
@@ -61,7 +60,6 @@ public class T {
     /**
      * 长时间显示Toast
      *
-     * @param context
      * @param message
      */
     public static void showLong(Context context, int message) {
@@ -76,13 +74,12 @@ public class T {
     /**
      * 自定义显示Toast时间
      *
-     * @param context
      * @param message
      * @param duration
      */
-    public static void show(Context context, CharSequence message, int duration) {
+    public static void show( CharSequence message, int duration) {
         if (null == toast) {
-            toast = Toast.makeText(context, message, duration);
+            toast = Toast.makeText(MyApplication.getInstance(), message, duration);
         } else {
             toast.setText(message);
         }
@@ -92,13 +89,12 @@ public class T {
     /**
      * 自定义显示Toast时间
      *
-     * @param context
      * @param message
      * @param duration
      */
-    public static void show(Context context, int message, int duration) {
+    public static void show( int message, int duration) {
         if (null == toast) {
-            toast = Toast.makeText(context, message, duration);
+            toast = Toast.makeText(MyApplication.getInstance(), message, duration);
         } else {
             toast.setText(message);
         }

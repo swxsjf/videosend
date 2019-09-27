@@ -1,4 +1,4 @@
-package com.example.shenweixing.myapplication;
+package com.example.shenweixing.myapplication.bean;
 
 import java.io.Serializable;
 

@@ -1,4 +1,4 @@
-package com.example.shenweixing.myapplication;
+package com.example.shenweixing.myapplication.activity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,20 +10,32 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.czht.face.recognition.Czhtdev;
+import com.example.shenweixing.myapplication.MyApplication;
+import com.example.shenweixing.myapplication.R;
+import com.example.shenweixing.myapplication.bean.UserMessageBean;
 import com.example.shenweixing.myapplication.utils.T;
+import com.example.shenweixing.myapplication.utils.Tools;
+
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -33,19 +45,22 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class VoideoChatActivity extends AppCompatActivity implements View.OnClickListener{
-    private String type;
+    private String type = "2";
     private int CameraType = 1;
     private int yuyingPort = 0;
     private int videoPort = 0;
     private int countryPort = 23340;
+    private static ZMQ.Context context;
+    private static ZMQ.Socket requester;
 
     private ImageView header, NoRecode, close, close1, NoVoice, other;
-    private TextView name, statu,openDoor;
+    private TextView name, statu;
     private RelativeLayout isagreen, agreen_yes;
     private LinearLayout agreen, not_agreen;
     private SurfaceView own;
     private SurfaceHolder holder;
     private Bitmap bitmap;
+    private Button openDoor;
 
     private int frequence = 8000; //录制频率，单位hz.这里的值注意了，写的不好，可能实例化AudioRecord对象的时候，会出错。我开始写成11025就不行。这取决于硬件设备
     private int channelConfig = AudioFormat.CHANNEL_IN_MONO;
@@ -63,15 +78,71 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
     private boolean IsStart = true;//是否点击接听，不然十五秒之后会关闭
     private AudioRecord recorder;
     private AudioTrack track;
+    private PowerManager mPowerManager;
+    private PowerManager.WakeLock mWakeLock;
 
     private MediaPlayer mediaPlayer;
     private UserMessageBean bean;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON|
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD|
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_voideo_chat);
+
+        onHide();
         init();
+        mPowerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "PostLocationService");
         initData();
+
+        startZMQ();
+
+        Log.e("life","onCreate");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e("life","onResume");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.e("life","onStart");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.e("life","onStop");
+    }
+
+    /**
+     * 沉浸式状态栏
+     */
+    public void onHide() {
+
+
+        //4.1及以上通用flags组合
+        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    flags | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            );
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
     }
 
     /**
@@ -85,7 +156,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
         NoVoice = (ImageView) findViewById(R.id.NoVoice);//转换摄像头
         name = (TextView) findViewById(R.id.name);//对方名字
         statu = (TextView) findViewById(R.id.statu);//状态，但是展示没用
-        openDoor = (TextView) findViewById(R.id.open_door);//开门按钮
+        openDoor = findViewById(R.id.open_door);//开门按钮
         isagreen = (RelativeLayout) findViewById(R.id.isagreen);//来电接听容器
         agreen_yes = (RelativeLayout) findViewById(R.id.agreen_yes);//整个表层控件，隐藏之后就显示视频通话
         agreen = (LinearLayout) findViewById(R.id.agreen);//同意连接
@@ -96,6 +167,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
         close.setOnClickListener(this);
         close1.setOnClickListener(this);
         NoVoice.setOnClickListener(this);
+        openDoor.setOnClickListener(this);
     }
 
     /**
@@ -105,7 +177,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
         MyApplication.list.add(this);
         Intent intent = getIntent();
         if (intent != null) {
-            bean = (UserMessageBean) intent.getSerializableExtra("data");
+//            bean = (UserMessageBean) intent.getSerializableExtra("data");TODO =====================================================================================================
             type = intent.getStringExtra("type");
             try {
                 videoPort = 23336;
@@ -113,7 +185,9 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 socket1 = new DatagramSocket(23340);
                 socket = new DatagramSocket(yuyingPort);//初始化socket
                 socket2 = new DatagramSocket(videoPort);
-                serverAddress = InetAddress.getByName(bean.getIpAdress());//初始化地址
+//                serverAddress = InetAddress.getByName(bean.getIpAdress());//初始化地址
+                serverAddress = InetAddress.getByName("192.168.10.180");//初始化地址
+//                serverAddress = InetAddress.getByName("192.168.11.241");//初始化地址
                 handler.sendEmptyMessage(9);
             } catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -287,12 +361,35 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
         }).start();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.e("life","onPause");
+//        flagRecode = false;//停止录音线程
+//        flagPlay = false;//停止播放录音线程
+//        if (recorder != null) {
+//            recorder.stop();
+//            recorder.release();
+//            recorder = null;
+//        }
+//        if (track != null) {
+//            track.stop();
+//            track.release();
+//            track = null;
+//        }
+//        if (mediaPlayer != null) {
+//            mediaPlayer.release();
+//        }
+
+    }
+
     /**
      * 关闭界面
      */
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.e("life","onDestroy");
         MyApplication.list.clear();
         flagRecode = false;//停止录音线程
         flagPlay = false;//停止播放录音线程
@@ -350,8 +447,10 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 }
             } else if (msg.what == 3) {
                 statu.setText("通话中..");
+                openDoor.setVisibility(View.VISIBLE);
             } else if (msg.what == 4) {
                 T.showLong(VoideoChatActivity.this, "对方已挂断");
+                openDoor.setVisibility(View.GONE);
             } else if (msg.what == 5) {
                 T.showLong(VoideoChatActivity.this, "对方未接听");
             } else if (msg.what == 6) {
@@ -364,6 +463,11 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 agreen_yes.setVisibility(View.GONE);
             } else if (msg.what == 9) {
                 //startVideoSend();//开始
+                if (!mPowerManager.isScreenOn()) {
+                    mWakeLock = mPowerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "tag");
+                    mWakeLock.acquire();
+                    mWakeLock.release();
+                }
             }
         }
     };
@@ -402,6 +506,22 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
             case R.id.close:
             case R.id.close1:
                 stop();
+                if (socket1 != null) {//关闭socket1
+                    //TODO
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String str = "1";
+                            DatagramPacket packet = new DatagramPacket(str.getBytes(), str.getBytes().length, serverAddress, countryPort);
+                            try {
+                                socket1.send(packet);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            socket1.close();
+                        }
+                    }).start();
+                }
                 break;
             case R.id.NoVoice:
                 if (CameraType == 1) {
@@ -412,7 +532,77 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 own.setVisibility(View.GONE);
                 own.setVisibility(View.VISIBLE);
                 break;
+
+            case R.id.open_door:
+                try {
+                    send(openDoor());
+                } catch (Exception e) {
+                    Tools.restartDevices();
+                }
+                break;
         }
     }
+    /**
+     * 开门
+     *
+     * @return
+     */
+    private byte[] openDoor() {
+        Czhtdev.Message.Builder message = Czhtdev.Message.newBuilder();
+        message.setType(Czhtdev.MessageType.MsgOpenDoor);
+        return message.build().toByteArray();
+    }
+
+    private void send(final byte[] bytes) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    requester.send(bytes);
+                    byte[] b = requester.recv();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            openDoor.setEnabled(true);
+                        }
+                    });
+
+                    if (b==null){
+                        //重新连接
+                        startZMQ();
+                    }
+
+                }catch (ZMQException e){
+                    Log.i("ZMQ",e.toString());
+                    startZMQ();
+                }
+
+            }
+        }).start();
+
+    }
+
+    private void startZMQ() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (requester!=null){
+                    requester.close();
+                }
+                if (context!=null){
+                    context.close();
+                }
+                context = ZMQ.context(1);
+                requester = context.socket(ZMQ.REQ);
+                requester.setLinger(0);
+                requester.setSendTimeOut(5000);
+                requester.setReceiveTimeOut(5000);
+                requester.connect("tcp:/"+serverAddress+":5000");
+            }
+        }).start();
+
+
+    }
+
 }
 

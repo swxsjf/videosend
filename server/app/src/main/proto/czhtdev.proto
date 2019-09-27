@@ -1,0 +1,347 @@
+
+syntax = "proto2";
+option java_package = "com.czht.face.recognition";
+package Czhtdev;
+
+enum MessageType {
+	MsgDefaultReply          			= 1;
+	MsgGetDevice						= 0x9001; // 设备信息查询（设备软件版本，设备区域，设备名称）
+	MsgGetDeviceReply					= 0x9002;
+	MsgSetDevice						= 0x9003; // 设备信息修改（设备区域，设备名称）
+	MsgSetDeviceReply					= 0x9004;
+	MsgGetDeviceConfig					= 0x9005; // 设备配置查询（区域权限启用/禁用，时间权限启用/禁用，指纹功能人脸加指纹/人脸或指纹/禁用指纹，活体检测启用/禁用）
+	MsgGetDeviceConfigReply				= 0x9006;
+	MsgSetDeviceConfig					= 0x9007; // 设备配置修改（区域权限启用/禁用，时间权限启用/禁用，指纹功能人脸加指纹/人脸或指纹/禁用指纹，活体检测启用/禁用）
+	MsgSetDeviceConfigReply				= 0x9008;
+	MsgGetUser							= 0x9009; // 查询注册用户
+	MsgGetUserReply						= 0x900A; // 返回注册用户信息详情
+	MsgGetUserList                      = 0x900B; // 查询注册用户列表
+	MsgGetUserReplyList					= 0x900C; // 返回注册用户信息列表
+	MsgAddUser							= 0x900D; // 增加注册用户
+	MsgAddUserReply						= 0x900E;
+	MsgDelUser							= 0x900F; // 删除注册用户
+	MsgDelUserReply						= 0x9010;
+	MsgModifyUser						= 0x9011; // 修改注册用户
+	MsgModifyUserReply					= 0x9012;
+	MsgGetLocalRecord					= 0x9013; // 查询通行记录
+	MsgGetLocalRecordReply				= 0x9014; // 返回同行记录详细信息
+	MsgGetLocalRecordList				= 0x9015; // 查询通行记录
+	MsgGetLocalRecordReplyList		 	= 0x9016; // 返回同行记录id
+	MsgGetLocalRecordSynchronous        = 0x9017; // 同步本地记录
+	MsgGetLocalRecordSynchronousReply   = 0x9018; // 同步本地记录返回
+	MsgAddPicture                       = 0x9019; // 图片增加
+	MsgAddPictureReply                  = 0x9020; //
+	MsgDelPicture                       = 0x9021; // 图片删除
+	MsgDelPictureReply                  = 0x9022; //
+	MsgModifyPicture                    = 0x9023; // 图片修改
+	MsgModifyPictureReply               = 0x9024; //
+
+	MsgAddIDCard                        = 0x9025; // 注册卡信息
+	MsgAddIDCardReply                   = 0x9026;
+	MsgDelIDCard                        = 0x9027; // 删除卡信息
+	MsgDelIDCardReply                   = 0x9028;
+	MsgGetIDCard                  		= 0x902B; // 查询卡信息
+	MsgGetIDCardReply             		= 0x902C;
+
+	MsgAddIPList                        = 0x9030; // 注册门铃用户IP
+	MsgAddIPListeeply                   = 0x9031;
+	MsgDelIPList                        = 0x9032; // 删除门铃用户IP
+	MsgDelIPListReply                   = 0x9033;
+	MsgGetIPList                  		= 0x9034; // 查询门铃用户IP
+	MsgGetIPListReply             		= 0x9035;
+	MsgOpenDoor                         = 0x9036; //开门
+	MsgOpenDoorReply                    = 0x9037;
+	MsgCloseDoor                        = 0x9038; //关门
+	MsgCloseDoorReply                   = 0x9039;
+	MsgRestartDevices                   = 0x903A; //重启设备
+	MsgRestartDevicesReply              = 0x903B;
+
+}
+
+// 失败原因
+enum ErrorType {
+	ErrorNoError					= 0;
+	ErrorSameID						= 0x9500;	// 唯一ID冲突
+	ErrorNoface						= 0x9501;   // 图片未检测到人脸
+	ErrorPic						= 0x9502;   // 图片人脸不符合标准 过小 过大 角度过大
+	ErrorTooManyFace				= 0x9503;   // 图片检测到人脸个数不是一个
+	ErrorNoID						= 0x9504;   // 未找到唯一ID
+	ErrorState          			= 0x9505;   //状态错误 未在指定的范围类
+	ErrorinsertUserTable            = 0x9506;   //用户信息表插入失败
+	ErrorinsertUser            		= 0x9507;   //用户信息插入失败
+	Errorupdate            		    = 0x9508;   //用户信更新失败
+}
+// 设备信息查询
+message DeviceInfo{
+	optional string	device_id			= 1; // 设备ID
+	optional string	device_name			= 2; // 设备名称
+	optional int32	device_type			= 3; // 设备类型
+	optional string  device_version		= 4; // 设备软件版本
+	optional string  device_android_id	= 5; // 设备序列号(ANDROID ID)
+}
+
+// 设备配置项
+message DevConfig{
+	repeated ConfigDescribe         config                                   =1; //描述信息
+}
+
+message QueryConfig{
+	optional string	                save			                        = 1; // 保留
+}
+
+// 修改设备配置
+message ModifyConfig{
+	optional string	                    save			                        = 1; // 保留
+	repeated ConfigPartDescribe         config                                   =2; //描述信息
+
+}
+
+
+message ConfigDescribe{
+	required string         emnu						          =1; // 成员变量参数 key
+	required string         msg                                   =2; // 描述信息
+	required int32          mask1						          =3; // 标记 界面分块 1-5
+	required int32          mask2						          =4; // 标记 参数类型 0 int; 1 string; 2 bool; 3 长度为int数组 使用“,”分割(英文状态下的逗号)
+	required string			cfg									  =5; // 成员变量value
+	required string			scope								  =6; // 值得范围
+	// 1. int 值范围 比如a的范围是1-10 则描述为 [1,10]都包含
+	// 2.int数组 比如区域 x的范围是0-10，y的范围是5-12则，范围： [0,10,5,12]
+	// 3.bool型："null"
+	// 4.string 长度限制 比如密码长度1-10 范围为[1,10]
+	// 特殊说明 字符串：ip    ：传 "ip"
+	// 特殊说明 字符串：端口  ：传 "port"
+	// 特殊说明 字符串：组合关系 ：传"combination"  内容：[true,true,true]
+}
+
+
+message ConfigPartDescribe{
+	required string         emnu						          =1; // 成员变量参数 key
+	required int32          mask2						          =2; // 标记 参数类型 0 int; 1 string; 2 bool; 3 长度为int数组 使用“,”分割(英文状态下的逗号)
+	required string			cfg									  =3; // 成员变量value
+	required string			scope								  =4; // 值得范围
+}
+
+
+// 星期权限
+message Week{
+	required	bool	week1		= 1;
+	required	bool	week2		= 2;
+	required	bool	week3		= 3;
+	required	bool	week4		= 4;
+	required	bool	week5		= 5;
+	required	bool	week6		= 6;
+	required	bool	week7		= 7;
+}
+// 普通用户时间权限
+message TimeAuth{
+	required	uint64	start_date	= 1;	//时间戳
+	required	uint64	end_date	= 2;	//时间戳
+	required	int32	start_time	= 3;	//距离零点的秒数 如：9:00:00AM 对应 32400s
+	required	int32	end_time	= 4;	//距离零点的秒数
+	optional	Week	weekday		= 5;
+}
+// 用户图片信息
+message UserPic{
+	required	int32	user_pic_id			= 1; // 图片唯一ID
+	required	bytes	face_data			= 2; // 人脸图数据
+}
+
+
+// User用户响应
+message User{
+	required string		user_id 				= 1; // 用户唯一ID
+	required string		user_name 				= 2; // 用户姓名
+	required string		sex 				    = 3; // 性别
+	required bool		user_areas				= 4; // 区域权限
+	repeated UserPic	user_register_pics		= 5; // 用户注册图片最多4张 最少1张
+	optional int32		user_type				= 6; // 用户类型 普通用户 或 访客
+	optional uint64		visit_starttime			= 7;
+	optional uint64		visit_endtime			= 8;
+	optional TimeAuth	user_time_auth			= 9; // 普通用户时间权限
+	optional bytes		fingerprint_data		= 10; // 指纹数据
+	optional string		company_id 				= 11; // 公司职位
+	optional string		card 				    = 12; // 门禁卡信息
+	optional string		id_card 				= 13; // 身份证号
+}
+
+//用户列表
+message UserList{
+	required string		user_id 				= 1; // 用户唯一ID
+	required string		user_name 				= 2; // 用户姓名
+	required string		sex 				    = 3; // 性别
+	required bool		user_areas				= 4; // 区域权限
+	repeated int32	    pics_id		            = 5; // 用户注册图片最多4张 最少1张
+	optional int32		user_type				= 6; // 用户类型 普通用户 或 访客
+	optional uint64		visit_starttime			= 7;
+	optional uint64		visit_endtime			= 8;
+	optional TimeAuth	user_time_auth			= 9; // 普通用户时间权限
+	optional string		company_id 				= 10; // 公司职位
+	optional string		card 				    = 11; // 门禁卡信息
+	optional string		id_card 				= 12; // 身份证号
+	optional int32		modify_type 		    = 13; // 修改状态 0：没有修改  1：修改指纹  2：修改卡信息 3：指纹卡信息一起修改
+}
+
+
+// 删除用户信息
+message DeleteLocalUser{
+	required string		user_id 				= 1; // 用户唯一ID
+}
+
+// 查询用户信息
+message QueryLocalUser{
+	required string		user_id 				= 1; // 用户唯一ID
+}
+// 查询用户信息
+message QueryLocalUserList{
+	required int32		state 					= 1; // 根据状态查找  -1 ：所有数据 ; 0 ：同步数据  1：未同步数据
+	optional string		name 				    = 2; // 姓名
+}
+
+//查询通行记录接口集合
+message QueryPassageRecord{
+	required int32       id                           =2;  // 根据id查找
+}
+
+//查询通行记录接口
+message QueryPassageRecordList{
+	required int32		 state                        =1;  // 根据状态查找  -1 ：所有数据 ; 0 ：同步数据  1：未同步数据
+	optional string		name						  =2; // 姓名
+	optional TimePeriod	time					      =3; // 根据时间段查找
+}
+
+//时间段
+message TimePeriod{
+	required uint64  begintime                       =1;//开始时间
+	required uint64  endtime                         =2;//结束时间
+}
+
+
+message PassageRecord{
+	required int32		 id                        = 1; // 记录id
+	required bytes	     image				       = 2; // 图片
+	required uint64      time                      = 3; // 通行时间
+	optional string		 user_id                   = 4; // 用户id
+	optional string		 name                      = 5; // 用户名
+	optional bool		 permission_time           = 6; // 时间权限
+	optional bool		 permission_area           = 7; // 区域权限
+	optional bool		 living                    = 8; // 是否活体
+	optional int32		 type                      = 9; // 哪种方式产生的通行记录{0：网络人脸识别，1：本地人脸识别，2：指纹识别，3：密码，4：身份证，5：门禁卡，6：门铃}
+	optional int32		 score                     = 10; // 相似度（0-100）
+	optional Face_Param faceparam				   = 11; //人脸参数
+
+}
+
+message Face_Param
+{
+	required int32 faceLeftTopX				=1;//人脸范围左上点.x
+	required int32 faceLeftTopY 				=2;//人脸范围左上点.y
+	required int32 faceWidth				=3;//人脸宽
+	required int32 faceHeight				=4;//人脸高
+}
+
+message PassageRecordList{
+	required int32		 id                        = 1; // 记录id
+	required uint64      time                      = 3; // 通行时间
+	optional string		 user_id                   = 4; // 用户id
+	optional string		 name                      = 5; // 用户名
+	optional bool		 permission_time           = 6; // 时间权限
+	optional bool		 permission_area           = 7; // 区域权限
+	optional bool		 living                    = 8; // 是否活体
+	optional int32		 type                      = 9; // 哪种方式产生的通行记录{0：网络人脸识别，1：本地人脸识别，2：指纹识别，3：密码，4：身份证，5：门禁卡，6：门铃}
+
+}
+
+//增加（修改）图片
+message AddPicture{
+	required string		user_id 				= 1; // 用户唯一ID
+	required int32 		picture_id 				= 2; // 图片ID
+	required bytes	    face_data			    = 3; // 人脸图数据
+}
+
+message UpdatePicture{
+	required string		user_id 				= 1; // 用户唯一ID
+	required int32 		picture_old 			= 2; // 图片ID
+	required int32 		picture_new 			= 3; // 图片ID
+	required bytes	    face_data			    = 4; // 人脸图数据
+}
+
+//删除图片
+message DelPicture{
+	required string		user_id 				= 1; // 用户唯一ID
+	required int32 		picture_id 				= 2; // 图片ID
+}
+
+//ID卡信息
+message IDCard{
+	required string    card_id		= 1;// 卡的唯一标识
+	optional int32	status 			=2; // 删除标记 0 未删除 1 已删除
+}
+
+//门铃注册用户
+message IPTable{
+	required string    ip		         = 1;// 用户IP
+	required string    house_number      = 2;// 用户编号
+}
+
+//门铃删除用户
+message IP{
+	required string    ip		         = 1;// 用户IP
+}
+
+
+//请求消息
+message Request {
+	optional User		      			add_user  	        = 1;  //注册用户
+	optional DeleteLocalUser	      	detele_user			= 2;  //删除用户
+	optional User	      				update_user   	    = 3;  //更新用户
+	optional QueryLocalUser		      	query_user   	    = 4;  //查询用户
+	optional QueryLocalUserList		    query_user_list   	= 5;  //查询用户列表
+
+	optional AddPicture	      			add_picture   	    = 6;  //增加图片
+	optional UpdatePicture	      		update_picture   	= 7;  //更新图片
+	optional DelPicture	      			detele_picture   	= 8;  //删除图片
+
+
+	optional QueryPassageRecord		    query_record   	    = 9;  //查询本地记录
+	optional QueryPassageRecordList		query_record_list   = 10;  //查询本地记录列表
+	optional QueryPassageRecord		    synchronous_record  = 11;  //同步本地记录
+
+
+	optional ModifyConfig 			      modify_cfg 		 = 12;   //修改配置文件
+	optional QueryConfig 			      query_cfg 		 = 13;   //请求配置文件（读取不需要传参根据MessageType：MsgGetDeviceConfig）
+
+	optional IDCard		      			add_card  	         = 14;  //注册卡
+	optional IDCard		      			detele_card  	     = 15;  //删除
+
+	optional IPTable                    add_ip               = 16;  // 注册门铃信息
+	optional IP                         detele_ip            = 17;  // 删除门铃信息
+
+}
+
+// 响应消息
+message Response
+{
+	required bool       			result                  = 1;
+	optional ErrorType      		error_code              = 2; // 错误码
+	optional string      			error_description       = 3; // 错误描述
+
+	optional User					user					= 5; //用户信息
+	repeated UserList				user_list				= 6; //用户信息列表（包含id）
+	optional PassageRecord          passge_record           = 7; //通行记录
+	repeated PassageRecordList      passge_record_list      = 8; //通行记录列表（包含id）
+	optional PassageRecord          passge_synchronous      = 9; //同步本地记录返回
+
+	optional DevConfig 				cfg 					= 10; //配置文件详情
+	optional DeviceInfo 			devinfo 				= 11; //设备信息详细
+	repeated IDCard 			    card_list 				= 13; //卡id列表
+
+	repeated IPTable 			    ip_list 				= 14; //ip列表
+
+}
+
+message Message
+{
+	required MessageType     type        = 1;
+	optional Request         request     = 2;
+	optional Response        response    = 3;
+}

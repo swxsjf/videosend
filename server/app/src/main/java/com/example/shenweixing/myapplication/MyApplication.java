@@ -33,6 +33,8 @@ public class MyApplication extends Application {
     public static String originalPic = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "VideoDemo" + File.separator + "originalPic";
     public static List<Activity> list = new ArrayList<>();
 
+    public static MyApplication myApplication;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -43,6 +45,12 @@ public class MyApplication extends Application {
         creatDir();
         Realm.init(getApplicationContext());
         uuid = UUID.randomUUID().toString();
+        myApplication = this;
+    }
+
+
+    public static MyApplication getInstance(){
+        return myApplication;
     }
 
     /**
