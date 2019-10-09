@@ -82,7 +82,8 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
     private PowerManager.WakeLock mWakeLock;
 
     private MediaPlayer mediaPlayer;
-    private UserMessageBean bean;
+    private String adverseIp;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -177,7 +178,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
         MyApplication.list.add(this);
         Intent intent = getIntent();
         if (intent != null) {
-//            bean = (UserMessageBean) intent.getSerializableExtra("data");TODO =====================================================================================================
+            adverseIp = intent.getStringExtra("data");
             type = intent.getStringExtra("type");
             try {
                 videoPort = 23336;
@@ -185,9 +186,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 socket1 = new DatagramSocket(23340);
                 socket = new DatagramSocket(yuyingPort);//初始化socket
                 socket2 = new DatagramSocket(videoPort);
-//                serverAddress = InetAddress.getByName(bean.getIpAdress());//初始化地址
-                serverAddress = InetAddress.getByName("192.168.10.180");//初始化地址
-//                serverAddress = InetAddress.getByName("192.168.11.241");//初始化地址
+                serverAddress = InetAddress.getByName(adverseIp);//初始化地址
                 handler.sendEmptyMessage(9);
             } catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -351,6 +350,8 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                         } else if (lastData.equals("3")) {//对方未接听
                             handler.sendEmptyMessage(5);//吐司
                             stop();//关闭界面
+                        }else {
+                            Log.e("控制端口发回来的消息", "啥也不是");
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -481,6 +482,7 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                     public void run() {
                         String str = "2";
                         DatagramPacket packet = new DatagramPacket(str.getBytes(), str.getBytes().length, serverAddress, countryPort);
+                        Log.e("aaa","serverAddress:"+serverAddress);
                         try {
                             socket1.send(packet);
                         } catch (IOException e) {
@@ -597,7 +599,8 @@ public class VoideoChatActivity extends AppCompatActivity implements View.OnClic
                 requester.setLinger(0);
                 requester.setSendTimeOut(5000);
                 requester.setReceiveTimeOut(5000);
-                requester.connect("tcp:/"+serverAddress+":5000");
+                if (serverAddress != null)
+                    requester.connect("tcp:/"+serverAddress+":5000");
             }
         }).start();
 

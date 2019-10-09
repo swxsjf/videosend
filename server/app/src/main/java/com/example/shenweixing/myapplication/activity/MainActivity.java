@@ -58,7 +58,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private DatagramSocket datagramSocket;
     private boolean isReceive = true;
     private String address = "192.168.10.180";
-//    private String address = "192.168.11.241";
     private Intent intentserver;
 
 
@@ -108,8 +107,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        if (NetworkUtils.isWifi(this)) {
             name = getIntent().getStringExtra("name");
             SendMessage();
-//            GetMessage();
-            GetMessage1();
+            GetMessage();
+//            GetMessage1();
 //            GetMessageFromTcp();
 //        } else {
 //            T.showLong(this, "当前非WiFi环境");
@@ -257,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 try {
-                    DatagramSocket socket = new DatagramSocket(23333);
+                    DatagramSocket socket = new DatagramSocket(23334);
                     while (isFinish) {
                         byte[] data = new byte[1024];
                         DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -584,7 +583,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
 
                 } catch (SocketException e) {
-                    connect();
+                    Log.e("aaa","不需要");
+//                    connect();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

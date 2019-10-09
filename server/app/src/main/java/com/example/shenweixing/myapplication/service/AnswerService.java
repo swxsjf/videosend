@@ -5,7 +5,6 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
@@ -13,30 +12,24 @@ import android.util.Log;
 
 import com.example.shenweixing.myapplication.MyApplication;
 import com.example.shenweixing.myapplication.R;
-import com.example.shenweixing.myapplication.activity.MainActivity;
 import com.example.shenweixing.myapplication.activity.VoideoChatActivity;
 import com.example.shenweixing.myapplication.bean.UserMessageBean;
 import com.example.shenweixing.myapplication.utils.ChatRecord;
-import com.example.shenweixing.myapplication.utils.FileUtils;
 import com.example.shenweixing.myapplication.utils.NetworkUtils;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.realm.Realm;
 
 /**
  * 诚志海图
@@ -50,7 +43,7 @@ public class AnswerService extends Service {
     private boolean isFinish = true;
     private List<UserMessageBean> list = new ArrayList<>();
     private String name;
-    private String address = "192.168.11.241";
+    private String address = "192.168.10.180";
     private IBinder iBinder;
 
     @Nullable
@@ -118,7 +111,7 @@ public class AnswerService extends Service {
                                     }else {
                                         Intent intent1 = new Intent(getApplicationContext(), VoideoChatActivity.class);
                                         intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // Service跳转到Activity 要加这个标记
-//                                        intent1.putExtra("data", list.get(i));
+                                        intent1.putExtra("data", address);
                                         intent1.putExtra("type", "2");
                                         startActivity(intent1);
                                     }
